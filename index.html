@@ -18,7 +18,7 @@
                 --warning: #f59e0b;
                 --pad: 16px;
                 --vh: 100vh; /* 実ビューポート高さ（JSで更新） */
-                --header-h: auto; /* 左ヘッダ高を同期（JSで設定） */
+                --header-h: 52px; /* 左ヘッダ高を同期（JSで設定） */
             }
             * {
                 box-sizing: border-box;
@@ -93,19 +93,24 @@
                 min-height: 0;
             }
 
-            /* 列幅：座席と点数/金額の間をさらに圧縮（ギャップも6pxに） */
+            /* 一覧の各行：行高を少し高め、選択色を追加 */
             .row {
                 display: grid;
-                grid-template-columns: 44px 60px 1fr 132px 18px;
+                grid-template-columns: 44px 64px 1fr 140px 18px;
                 align-items: center;
                 gap: 6px;
-                padding: 6px 10px;
+                padding: 10px 12px; /* 縦の余白を+ */
                 border-bottom: 1px solid var(--border);
                 cursor: pointer;
                 background: #fff;
+                transition: background-color 0.12s ease;
             }
             .row:hover {
-                background: #fafafa;
+                background: #f8fafc;
+            }
+            .row.is-selected {
+                background: #eef2ff; /* 選択中のハイライト */
+                box-shadow: inset 3px 0 0 0 var(--accent);
             }
             .c-number {
                 font-weight: 800;
@@ -117,8 +122,6 @@
                 text-align: center;
                 font-variant-numeric: tabular-nums;
             }
-
-            /* 座席：ラベルは縮めず常に見せ、番号も必ず見える（間隔も縮小） */
             .c-seat {
                 display: flex;
                 align-items: center;
@@ -137,11 +140,9 @@
                 flex: 0 0 auto;
                 white-space: nowrap;
             }
-
-            /* 点数/金額：2カラム固定で右寄せ揃え（さらに詰める） */
             .c-sum {
                 display: grid;
-                grid-template-columns: 52px 1fr;
+                grid-template-columns: 56px 1fr;
                 align-items: center;
                 text-align: right;
                 white-space: nowrap;
@@ -154,8 +155,6 @@
             .c-sum .amt {
                 font-weight: 800;
             }
-
-            /* ランプ */
             .c-dot {
                 display: flex;
                 align-items: center;
@@ -195,13 +194,17 @@
                 gap: 12px;
                 padding: 12px 14px;
                 border-bottom: 1px solid var(--border);
+                height: var(--header-h);
                 min-height: var(--header-h);
+                max-height: var(--header-h);
+                overflow: hidden; /* 左ヘッダと高さを厳密一致させる */
             }
             .top-left {
                 display: flex;
                 align-items: center;
                 gap: 12px;
                 min-width: 0;
+                white-space: nowrap; /* 折返し防止 */
             }
             .order-number {
                 color: var(--accent);
@@ -433,19 +436,22 @@
                 );
             };
 
-            // 左ヘッダーと右トップバーの高さを同期
+            // 左ヘッダーと右トップバーの高さを同期（常に一致させる）
             function syncHeaderHeight() {
                 try {
-                    const h = listHeader.offsetHeight || 0;
+                    const h =
+                        listHeader.getBoundingClientRect().height ||
+                        listHeader.offsetHeight ||
+                        0;
                     if (h > 0) {
                         document.documentElement.style.setProperty(
                             "--header-h",
-                            h + "px",
+                            Math.round(h) + "px",
                         );
                     }
                 } catch (e) {}
             }
-            // 初期＋リサイズで同期
+            // 初期＋リサイズ＋フォント/ビューポート変化で同期
             window.addEventListener("load", syncHeaderHeight);
             window.addEventListener("resize", syncHeaderHeight);
             if (window.visualViewport) {
@@ -507,6 +513,11 @@
                 c5.append(dot);
 
                 li.append(c1, c2, c3, c4, c5);
+
+                // 選択ハイライト
+                if (state.selectedId === o.groupId) {
+                    li.classList.add("is-selected");
+                }
                 li.onclick = () => {
                     state.selectedId = o.groupId;
                     renderList();
@@ -523,7 +534,6 @@
                     d.className = "empty";
                     d.textContent = "現在、注文はありません。";
                     rowsEl.append(d);
-                    // ヘッダ高さ同期（フォント等の影響があれば）
                     syncHeaderHeight();
                     return;
                 }
@@ -549,21 +559,16 @@
                 const o = merged.find((x) => x.groupId === state.selectedId);
 
                 if (!o) {
-                    // 何も選択されていない
                     orderNumber.textContent = "";
                     detailSeat.textContent = hasAny ? "注文を選択" : "";
-                    // ステータスChipは消す
                     detailStatus.style.display = "none";
                     detailStatus.className = "chip";
                     detailStatus.textContent = "";
-                    // ピルは全て消す
                     showAcceptPill(false);
                     pillTime.style.display = "none";
                     timeLabel.textContent = "受付";
                     detailTime.textContent = "";
-                    // 本文は何も表示しない
                     detailBody.innerHTML = "";
-                    // サマリ/ボタン
                     detailSummary.textContent = "";
                     doneBtn.disabled = true;
                     doneBtn.textContent = "準備完了";
