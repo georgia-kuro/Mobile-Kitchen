@@ -16,8 +16,8 @@
                 --accent: #2563eb;
                 --success: #10b981;
                 --warning: #f59e0b;
-                --pad: 16px; /* 画面の左右上下の余白 */
-                --vh: 100vh; /* JSで実ビューポート高さ(px)を代入 */
+                --pad: 16px;
+                --vh: 100vh;
             }
             * {
                 box-sizing: border-box;
@@ -47,7 +47,6 @@
                     "cv01" 1;
             }
             .wrap {
-                /* 実ビューポート高（--vh）から左右上下パディング分を差し引き、常に外枠が収まる */
                 height: calc(var(--vh) - (var(--pad) * 2));
                 max-width: 1400px;
                 margin: 0 auto;
@@ -113,16 +112,48 @@
                 text-align: center;
                 font-variant-numeric: tabular-nums;
             }
+
+            /* 座席：ラベルだけ省略、番号は必ず見える */
             .c-seat {
-                font-weight: 800;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                min-width: 0;
                 white-space: nowrap;
+            }
+            .c-seat .s-label {
+                color: var(--muted);
                 overflow: hidden;
                 text-overflow: ellipsis;
+                white-space: nowrap;
+                flex: 1 1 auto;
+                min-width: 0;
+                max-width: 6em; /* ラベル側だけ縮む */
             }
-            .c-sum {
-                text-align: right;
+            .c-seat .s-num {
+                font-weight: 800;
+                flex: 0 0 auto;
                 white-space: nowrap;
             }
+
+            /* 点数/金額：内側2カラム固定で揃える */
+            .c-sum {
+                display: grid;
+                grid-template-columns: 56px 1fr;
+                align-items: center;
+                text-align: right;
+                white-space: nowrap;
+                font-variant-numeric: tabular-nums;
+            }
+            .c-sum .qty {
+                color: var(--muted);
+                padding-right: 6px;
+            }
+            .c-sum .amt {
+                font-weight: 800;
+            }
+
+            /* ランプ */
             .c-dot {
                 display: flex;
                 align-items: center;
@@ -278,7 +309,6 @@
                 cursor: not-allowed;
             }
 
-            /* iPad横/狭幅での列幅最適化（任意） */
             @media (max-width: 1024px) {
                 .wrap {
                     grid-template-columns: minmax(300px, 380px) 1fr;
@@ -400,11 +430,27 @@
 
                 const c3 = document.createElement("div");
                 c3.className = "c-seat";
-                c3.textContent = o.seat ? `座席 ${o.seat}` : "テイクアウト";
+                if (o.seat) {
+                    const sLabel = document.createElement("span");
+                    sLabel.className = "s-label";
+                    sLabel.textContent = "座席";
+                    const sNum = document.createElement("span");
+                    sNum.className = "s-num";
+                    sNum.textContent = o.seat;
+                    c3.append(sLabel, sNum);
+                } else {
+                    c3.textContent = "テイクアウト";
+                }
 
                 const c4 = document.createElement("div");
                 c4.className = "c-sum";
-                c4.innerHTML = `<span class="qty" style="color:#6b7280">${o.totalQuantity}点</span> <span class="amt" style="font-weight:800">${yen(o.totalAmount)}</span>`;
+                const q = document.createElement("span");
+                q.className = "qty";
+                q.textContent = `${o.totalQuantity}点`;
+                const a = document.createElement("span");
+                a.className = "amt";
+                a.textContent = yen(o.totalAmount);
+                c4.append(q, a);
 
                 const c5 = document.createElement("div");
                 c5.className = "c-dot";
