@@ -364,14 +364,16 @@
                         <span id="detailStatus" class="chip"></span>
                     </div>
                     <div class="top-right">
-                        <span class="pill" id="pillOrder" hidden>
-                            <span class="label">注文</span>
-                            <span id="orderTime"></span>
+                        <!-- READY のときだけ表示する「受付 hh:mm」ピル -->
+                        <span class="pill" id="pillAccept" hidden>
+                            <span class="label">受付</span>
+                            <span id="acceptTime"></span>
                         </span>
-                        <span class="pill" id="pillTime"
-                            ><span class="label" id="timeLabel">受付</span
-                            ><span id="detailTime"></span
-                        ></span>
+                        <!-- 右側のピルは PENDING:「受付」、READY:「提供」 -->
+                        <span class="pill" id="pillTime">
+                            <span class="label" id="timeLabel">受付</span>
+                            <span id="detailTime"></span>
+                        </span>
                     </div>
                 </div>
                 <div id="detailBody" class="detail">
@@ -401,9 +403,9 @@
             const detailSummary = document.getElementById("detailSummary");
             const doneBtn = document.getElementById("doneBtn");
 
-            // 追加: 注文時刻ピル
-            const pillOrder = document.getElementById("pillOrder");
-            const orderTime = document.getElementById("orderTime");
+            // 「受付」ピル（READYの時だけ左に追加表示）
+            const pillAccept = document.getElementById("pillAccept");
+            const acceptTime = document.getElementById("acceptTime");
 
             const yen = (n) => "¥" + Number(n || 0).toLocaleString("ja-JP");
             const fmtHM = (v) => {
@@ -435,7 +437,7 @@
 
                 const c2 = document.createElement("div");
                 c2.className = "c-time";
-                // 変更: 一覧の時刻は常に「注文時刻」
+                // 一覧の時刻は「受付（createdTs）」に統一
                 const t = o.createdTs;
                 c2.textContent = fmtHM(t);
 
@@ -500,9 +502,10 @@
                     detailSeat.textContent = "注文を選択";
                     detailStatus.className = "chip";
                     detailStatus.textContent = "";
-                    // 注文ピルを隠してクリア
-                    pillOrder.hidden = true;
-                    orderTime.textContent = "";
+                    // 左の「受付」ピルを隠す
+                    pillAccept.hidden = true;
+                    acceptTime.textContent = "";
+                    // 右は初期「受付」
                     timeLabel.textContent = "受付";
                     detailTime.textContent = "";
                     detailBody.textContent =
@@ -525,10 +528,11 @@
                     detailStatus.className = "chip chip--ready";
                     detailStatus.textContent = "提供済み";
 
-                    // 2つのピルを表示：「注文」「提供」
-                    pillOrder.hidden = false;
-                    orderTime.textContent = fmtHM(o.createdTs);
+                    // 左に「受付」ピルを表示（受付時間）
+                    pillAccept.hidden = false;
+                    acceptTime.textContent = fmtHM(o.createdTs);
 
+                    // 右のピルは「提供」時間
                     timeLabel.textContent = "提供";
                     detailTime.textContent = fmtHM(
                         o.readyTs || o.updatedTs || o.createdTs,
@@ -537,10 +541,11 @@
                     detailStatus.className = "chip chip--pending";
                     detailStatus.textContent = "準備待ち";
 
-                    // 注文ピルは非表示、右は「受付」
-                    pillOrder.hidden = true;
-                    orderTime.textContent = "";
+                    // 左の「受付」ピルは表示しない
+                    pillAccept.hidden = true;
+                    acceptTime.textContent = "";
 
+                    // 右のピルは「受付」時間のみ表示
                     timeLabel.textContent = "受付";
                     detailTime.textContent = fmtHM(o.createdTs);
                 }
