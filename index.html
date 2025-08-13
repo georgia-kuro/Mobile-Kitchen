@@ -360,30 +360,23 @@
                 <div class="topbar">
                     <div class="top-left">
                         <span id="orderNumber" class="order-number"></span>
-                        <span id="detailSeat" class="seat">注文を選択</span>
-                        <span id="detailStatus" class="chip"></span>
+                        <span id="detailSeat" class="seat"></span>
+                        <span id="detailStatus" class="chip" style="display:none;"></span>
                     </div>
                     <div class="top-right">
                         <!-- READY のときだけ表示する「受付 hh:mm」ピル（初期は非表示） -->
-                        <span
-                            class="pill"
-                            id="pillAccept"
-                            style="display: none"
-                            aria-hidden="true"
-                        >
+                        <span class="pill" id="pillAccept" style="display:none" aria-hidden="true">
                             <span class="label">受付</span>
                             <span id="acceptTime"></span>
                         </span>
-                        <!-- 右側のピルは PENDING:「受付」、READY:「提供」 -->
-                        <span class="pill" id="pillTime">
+                        <!-- 右側のピルは PENDING:「受付」、READY:「提供」（初期は非表示） -->
+                        <span class="pill" id="pillTime" style="display:none">
                             <span class="label" id="timeLabel">受付</span>
                             <span id="detailTime"></span>
                         </span>
                     </div>
                 </div>
-                <div id="detailBody" class="detail">
-                    左の一覧から注文を選択してください。
-                </div>
+                <div id="detailBody" class="detail"></div>
                 <div class="footer">
                     <div id="detailSummary" class="summary"></div>
                     <button id="doneBtn" class="primary" disabled>
@@ -404,6 +397,7 @@
             const detailStatus = document.getElementById("detailStatus");
             const timeLabel = document.getElementById("timeLabel");
             const detailTime = document.getElementById("detailTime");
+            const pillTime = document.getElementById("pillTime");
             const detailBody = document.getElementById("detailBody");
             const detailSummary = document.getElementById("detailSummary");
             const doneBtn = document.getElementById("doneBtn");
@@ -411,18 +405,6 @@
             // 「受付」ピル（READYの時だけ左に追加表示）
             const pillAccept = document.getElementById("pillAccept");
             const acceptTime = document.getElementById("acceptTime");
-
-            const showAcceptPill = (show, ts) => {
-                if (show) {
-                    pillAccept.style.display = "inline-flex";
-                    pillAccept.setAttribute("aria-hidden", "false");
-                    acceptTime.textContent = fmtHM(ts);
-                } else {
-                    pillAccept.style.display = "none";
-                    pillAccept.setAttribute("aria-hidden", "true");
-                    acceptTime.textContent = "";
-                }
-            };
 
             const yen = (n) => "¥" + Number(n || 0).toLocaleString("ja-JP");
             const fmtHM = (v) => {
@@ -511,27 +493,49 @@
                 merged.forEach((o) => rowsEl.append(makeRow(o)));
             }
 
+            function showAcceptPill(show, ts) {
+                if (show) {
+                    pillAccept.style.display = "inline-flex";
+                    pillAccept.setAttribute("aria-hidden", "false");
+                    acceptTime.textContent = fmtHM(ts);
+                } else {
+                    pillAccept.style.display = "none";
+                    pillAccept.setAttribute("aria-hidden", "true");
+                    acceptTime.textContent = "";
+                }
+            }
+
             function renderDetail() {
-                const all = [...state.pending, ...state.ready];
-                const o = all.find((x) => x.groupId === state.selectedId);
+                const merged = [...state.pending, ...state.ready];
+                const hasAny = merged.length > 0;
+                const o = merged.find((x) => x.groupId === state.selectedId);
+
                 if (!o) {
+                    // 何も選択されていない
                     orderNumber.textContent = "";
-                    detailSeat.textContent = "注文を選択";
+                    detailSeat.textContent = hasAny ? "注文を選択" : "";
+                    // ステータスChipは消す
+                    detailStatus.style.display = "none";
                     detailStatus.className = "chip";
                     detailStatus.textContent = "";
-                    // 左の「受付」ピルを確実に隠す
+                    // ピルは全て消す
                     showAcceptPill(false);
-                    // 右は初期「受付」
+                    pillTime.style.display = hasAny ? "none" : "none"; // 注文なし状況では非表示
                     timeLabel.textContent = "受付";
                     detailTime.textContent = "";
-                    detailBody.textContent =
-                        "左の一覧から注文を選択してください。";
+                    // 本文
+                    detailBody.innerHTML = hasAny ? "" : ""; // 注文が無い時は文面も表示しない
+                    // サマリ/ボタン
                     detailSummary.textContent = "";
                     doneBtn.disabled = true;
                     doneBtn.textContent = "準備完了";
                     doneBtn.onclick = null;
                     return;
                 }
+
+                // 選択あり：上部UIを表示
+                detailStatus.style.display = "inline-flex";
+                pillTime.style.display = "inline-flex";
 
                 orderNumber.textContent = o.orderNumber
                     ? `注文 #${String(o.orderNumber).padStart(3, "0")}`
@@ -556,10 +560,9 @@
                     detailStatus.className = "chip chip--pending";
                     detailStatus.textContent = "準備待ち";
 
-                    // 左の「受付」ピルは表示しない（確実に非表示）
+                    // 注文ピルは非表示、右は「受付」
                     showAcceptPill(false);
 
-                    // 右のピルは「受付」時間のみ表示
                     timeLabel.textContent = "受付";
                     detailTime.textContent = fmtHM(o.createdTs);
                 }
@@ -624,10 +627,21 @@
                     .then((res) => {
                         state.pending = res.pending || [];
                         state.ready = res.completed || [];
-                        if (!state.selectedId) {
-                            const first = state.pending[0] || state.ready[0];
-                            if (first) state.selectedId = first.groupId;
+                        const merged = [...state.pending, ...state.ready];
+
+                        if (merged.length === 0) {
+                            // 注文が1件もない場合は選択をクリア
+                            state.selectedId = null;
+                        } else {
+                            // 既存の選択が無ければ先頭を選択
+                            if (
+                                !state.selectedId ||
+                                !merged.find((x) => x.groupId === state.selectedId)
+                            ) {
+                                state.selectedId = merged[0].groupId;
+                            }
                         }
+
                         renderList();
                         renderDetail();
                         refreshBtn.disabled = false;
