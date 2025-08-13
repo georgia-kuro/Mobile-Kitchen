@@ -18,6 +18,7 @@
                 --warning: #f59e0b;
                 --pad: 16px;
                 --vh: 100vh; /* 実ビューポート高さ（JSで更新） */
+                --header-h: auto; /* 左ヘッダ高を同期（JSで設定） */
             }
             * {
                 box-sizing: border-box;
@@ -194,6 +195,7 @@
                 gap: 12px;
                 padding: 12px 14px;
                 border-bottom: 1px solid var(--border);
+                min-height: var(--header-h);
             }
             .top-left {
                 display: flex;
@@ -349,7 +351,7 @@
     <body>
         <div class="wrap">
             <section class="panel">
-                <header>
+                <header id="listHeader">
                     <div>注文一覧</div>
                     <button id="refreshBtn" class="btn">更新</button>
                 </header>
@@ -357,20 +359,29 @@
             </section>
 
             <section class="right">
-                <div class="topbar">
+                <div class="topbar" id="topbar">
                     <div class="top-left">
                         <span id="orderNumber" class="order-number"></span>
                         <span id="detailSeat" class="seat"></span>
-                        <span id="detailStatus" class="chip" style="display:none;"></span>
+                        <span
+                            id="detailStatus"
+                            class="chip"
+                            style="display: none"
+                        ></span>
                     </div>
                     <div class="top-right">
                         <!-- READY のときだけ表示する「受付 hh:mm」ピル（初期は非表示） -->
-                        <span class="pill" id="pillAccept" style="display:none" aria-hidden="true">
+                        <span
+                            class="pill"
+                            id="pillAccept"
+                            style="display: none"
+                            aria-hidden="true"
+                        >
                             <span class="label">受付</span>
                             <span id="acceptTime"></span>
                         </span>
                         <!-- 右側のピルは PENDING:「受付」、READY:「提供」（初期は非表示） -->
-                        <span class="pill" id="pillTime" style="display:none">
+                        <span class="pill" id="pillTime" style="display: none">
                             <span class="label" id="timeLabel">受付</span>
                             <span id="detailTime"></span>
                         </span>
@@ -391,6 +402,7 @@
                 "https://script.google.com/macros/s/AKfycbx13V768FI1C79iewAv8q5j5dp-EB1gOzh0UurwnGnEoEiud8cpzSBmAeALs8HW8R893w/exec"; // ←あなたの/execに置換
             const rowsEl = document.getElementById("rows");
             const refreshBtn = document.getElementById("refreshBtn");
+            const listHeader = document.getElementById("listHeader");
 
             const orderNumber = document.getElementById("orderNumber");
             const detailSeat = document.getElementById("detailSeat");
@@ -420,6 +432,29 @@
                     String(d.getMinutes()).padStart(2, "0")
                 );
             };
+
+            // 左ヘッダーと右トップバーの高さを同期
+            function syncHeaderHeight() {
+                try {
+                    const h = listHeader.offsetHeight || 0;
+                    if (h > 0) {
+                        document.documentElement.style.setProperty(
+                            "--header-h",
+                            h + "px",
+                        );
+                    }
+                } catch (e) {}
+            }
+            // 初期＋リサイズで同期
+            window.addEventListener("load", syncHeaderHeight);
+            window.addEventListener("resize", syncHeaderHeight);
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener(
+                    "resize",
+                    syncHeaderHeight,
+                    { passive: true },
+                );
+            }
 
             const state = { pending: [], ready: [], selectedId: null };
 
@@ -488,9 +523,12 @@
                     d.className = "empty";
                     d.textContent = "現在、注文はありません。";
                     rowsEl.append(d);
+                    // ヘッダ高さ同期（フォント等の影響があれば）
+                    syncHeaderHeight();
                     return;
                 }
                 merged.forEach((o) => rowsEl.append(makeRow(o)));
+                syncHeaderHeight();
             }
 
             function showAcceptPill(show, ts) {
@@ -520,16 +558,19 @@
                     detailStatus.textContent = "";
                     // ピルは全て消す
                     showAcceptPill(false);
-                    pillTime.style.display = hasAny ? "none" : "none"; // 注文なし状況では非表示
+                    pillTime.style.display = "none";
                     timeLabel.textContent = "受付";
                     detailTime.textContent = "";
-                    // 本文
-                    detailBody.innerHTML = hasAny ? "" : ""; // 注文が無い時は文面も表示しない
+                    // 本文は何も表示しない
+                    detailBody.innerHTML = "";
                     // サマリ/ボタン
                     detailSummary.textContent = "";
                     doneBtn.disabled = true;
                     doneBtn.textContent = "準備完了";
                     doneBtn.onclick = null;
+
+                    // 高さ同期（空でも左ヘッダと同じ高さを維持）
+                    syncHeaderHeight();
                     return;
                 }
 
@@ -618,6 +659,9 @@
                             doneBtn.textContent = "準備完了";
                         });
                 };
+
+                // 表示更新後にも高さ同期
+                syncHeaderHeight();
             }
 
             function fetchOrders() {
@@ -636,7 +680,9 @@
                             // 既存の選択が無ければ先頭を選択
                             if (
                                 !state.selectedId ||
-                                !merged.find((x) => x.groupId === state.selectedId)
+                                !merged.find(
+                                    (x) => x.groupId === state.selectedId,
+                                )
                             ) {
                                 state.selectedId = merged[0].groupId;
                             }
