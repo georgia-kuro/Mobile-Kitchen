@@ -15,6 +15,8 @@
                 --muted: #6b7280;
                 --border: #e6e7ec;
                 --accent: #2563eb;
+                --success: #10b981;
+                --warning: #f59e0b;
             }
             * {
                 box-sizing: border-box;
@@ -53,7 +55,7 @@
                 min-height: 0;
             }
 
-            /* 左 */
+            /* 左：一覧 */
             .panel {
                 background: var(--card);
                 border: 1px solid var(--border);
@@ -88,10 +90,10 @@
             }
             .row {
                 display: grid;
-                grid-template-columns: 48px 64px 1fr 136px 14px;
+                grid-template-columns: 48px 64px 1fr 136px 22px;
                 align-items: center;
                 gap: 8px;
-                padding: 4px 10px;
+                padding: 6px 10px;
                 border-bottom: 1px solid var(--border);
                 cursor: pointer;
                 background: #fff;
@@ -107,6 +109,7 @@
             .c-time {
                 color: var(--muted);
                 text-align: center;
+                font-variant-numeric: tabular-nums;
             }
             .c-seat {
                 font-weight: 800;
@@ -118,16 +121,22 @@
                 text-align: right;
                 white-space: nowrap;
             }
+            .c-dot {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
             .dot {
-                width: 8px;
-                height: 8px;
+                display: inline-block;
+                width: 10px;
+                height: 10px;
                 border-radius: 50%;
             }
             .dot.pending {
-                background: #f59e0b;
+                background: var(--warning);
             }
             .dot.ready {
-                background: #10b981;
+                background: var(--success);
             }
             .empty {
                 padding: 16px;
@@ -135,7 +144,7 @@
                 text-align: center;
             }
 
-            /* 右 */
+            /* 右：詳細 */
             .right {
                 background: var(--card);
                 border: 1px solid var(--border);
@@ -152,11 +161,97 @@
                 padding: 12px 14px;
                 border-bottom: 1px solid var(--border);
             }
+            .top-left {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                min-width: 0;
+            }
+            .order-number {
+                color: var(--accent);
+                font-weight: 800;
+                white-space: nowrap;
+            }
+            .seat {
+                font-weight: 800;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .chip {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 2px 8px;
+                border-radius: 999px;
+                font-size: 0.8rem;
+                font-weight: 800;
+                border: 1px solid #e5e7eb;
+            }
+            .chip--pending {
+                background: #fff7ed;
+                color: #9a3412;
+                border-color: #fed7aa;
+            }
+            .chip--ready {
+                background: #ecfdf5;
+                color: #065f46;
+                border-color: #a7f3d0;
+            }
+            .pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 4px 8px;
+                border-radius: 999px;
+                border: 1px solid var(--border);
+                background: #fafafa;
+                color: #374151;
+                font-size: 0.85rem;
+                white-space: nowrap;
+            }
+            .pill .label {
+                color: var(--muted);
+            }
+
             .detail {
                 padding: 12px 14px;
                 overflow: auto;
                 flex: 1 1 auto;
             }
+            .items {
+                display: grid;
+                gap: 6px;
+            }
+            .item-row {
+                display: grid;
+                grid-template-columns: 1fr auto auto;
+                gap: 6px 12px;
+                align-items: baseline;
+                padding: 6px 0;
+                border-bottom: 1px dashed #e5e7eb;
+            }
+            .item-row:last-child {
+                border-bottom: 0;
+            }
+            .iname {
+                font-weight: 700;
+            }
+            .qty {
+                color: var(--muted);
+            }
+            .price {
+                color: var(--muted);
+            }
+            .note {
+                margin-top: 8px;
+                padding: 10px 12px;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                background: #fafafa;
+                color: #374151;
+            }
+
             .footer {
                 padding: 12px 14px;
                 border-top: 1px solid var(--border);
@@ -165,6 +260,9 @@
                 justify-content: space-between;
                 gap: 12px;
             }
+            .summary {
+                font-weight: 800;
+            }
             .primary {
                 background: var(--accent);
                 color: #fff;
@@ -172,6 +270,10 @@
                 border-radius: 999px;
                 padding: 8px 16px;
                 cursor: pointer;
+            }
+            .primary:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
             }
         </style>
     </head>
@@ -187,20 +289,23 @@
 
             <section class="right">
                 <div class="topbar">
-                    <div>
-                        <span
-                            id="orderNumber"
-                            style="color: #2563eb; font-weight: 800"
-                        ></span>
-                        <span id="detailSeat">注文を選択</span>
+                    <div class="top-left">
+                        <span id="orderNumber" class="order-number"></span>
+                        <span id="detailSeat" class="seat">注文を選択</span>
+                        <span id="detailStatus" class="chip"></span>
                     </div>
-                    <div><span id="detailTime"></span></div>
+                    <div class="top-right">
+                        <span class="pill" id="pillTime"
+                            ><span class="label" id="timeLabel">受付</span
+                            ><span id="detailTime"></span
+                        ></span>
+                    </div>
                 </div>
                 <div id="detailBody" class="detail">
                     左の一覧から注文を選択してください。
                 </div>
                 <div class="footer">
-                    <div id="detailSummary"></div>
+                    <div id="detailSummary" class="summary"></div>
                     <button id="doneBtn" class="primary" disabled>
                         準備完了
                     </button>
@@ -210,11 +315,14 @@
 
         <script>
             const API_BASE =
-                "https://script.google.com/macros/s/AKfycbx13V768FI1C79iewAv8q5j5dp-EB1gOzh0UurwnGnEoEiud8cpzSBmAeALs8HW8R893w/exec"; // ←置き換え
+                "https://script.google.com/macros/s/AKfycbx13V768FI1C79iewAv8q5j5dp-EB1gOzh0UurwnGnEoEiud8cpzSBmAeALs8HW8R893w/exec"; // ←あなたの/execに置換
             const rowsEl = document.getElementById("rows");
             const refreshBtn = document.getElementById("refreshBtn");
+
             const orderNumber = document.getElementById("orderNumber");
             const detailSeat = document.getElementById("detailSeat");
+            const detailStatus = document.getElementById("detailStatus");
+            const timeLabel = document.getElementById("timeLabel");
             const detailTime = document.getElementById("detailTime");
             const detailBody = document.getElementById("detailBody");
             const detailSummary = document.getElementById("detailSummary");
@@ -241,11 +349,13 @@
                 const li = document.createElement("li");
                 li.className = "row";
                 li.dataset.id = o.groupId;
+
                 const c1 = document.createElement("div");
                 c1.className = "c-number";
                 c1.textContent = o.orderNumber
                     ? `#${String(o.orderNumber).padStart(3, "0")}`
                     : "--";
+
                 const c2 = document.createElement("div");
                 c2.className = "c-time";
                 const t =
@@ -253,17 +363,22 @@
                         ? o.readyTs || o.updatedTs || o.createdTs
                         : o.createdTs;
                 c2.textContent = fmtHM(t);
+
                 const c3 = document.createElement("div");
                 c3.className = "c-seat";
                 c3.textContent = o.seat ? `座席 ${o.seat}` : "テイクアウト";
+
                 const c4 = document.createElement("div");
                 c4.className = "c-sum";
-                c4.innerHTML = `<span class="qty">${o.totalQuantity}点</span> <span class="amt">${yen(o.totalAmount)}</span>`;
+                c4.innerHTML = `<span class="qty" style="color:#6b7280">${o.totalQuantity}点</span> <span class="amt" style="font-weight:800">${yen(o.totalAmount)}</span>`;
+
                 const c5 = document.createElement("div");
+                c5.className = "c-dot";
                 const dot = document.createElement("span");
                 dot.className =
                     "dot " + (o.status === "READY" ? "ready" : "pending");
                 c5.append(dot);
+
                 li.append(c1, c2, c3, c4, c5);
                 li.onclick = () => {
                     state.selectedId = o.groupId;
@@ -292,6 +407,9 @@
                 if (!o) {
                     orderNumber.textContent = "";
                     detailSeat.textContent = "注文を選択";
+                    detailStatus.className = "chip";
+                    detailStatus.textContent = "";
+                    timeLabel.textContent = "受付";
                     detailTime.textContent = "";
                     detailBody.textContent =
                         "左の一覧から注文を選択してください。";
@@ -301,31 +419,56 @@
                     doneBtn.onclick = null;
                     return;
                 }
+
                 orderNumber.textContent = o.orderNumber
                     ? `注文 #${String(o.orderNumber).padStart(3, "0")}`
                     : "";
                 detailSeat.textContent = o.seat
                     ? `座席 ${o.seat}`
                     : "テイクアウト";
-                const t =
-                    o.status === "READY"
-                        ? o.readyTs || o.updatedTs || o.createdTs
-                        : o.createdTs;
-                detailTime.textContent = fmtHM(t);
 
+                if (o.status === "READY") {
+                    detailStatus.className = "chip chip--ready";
+                    detailStatus.textContent = "提供済み";
+                    timeLabel.textContent = "提供";
+                    detailTime.textContent = fmtHM(
+                        o.readyTs || o.updatedTs || o.createdTs,
+                    );
+                } else {
+                    detailStatus.className = "chip chip--pending";
+                    detailStatus.textContent = "準備待ち";
+                    timeLabel.textContent = "受付";
+                    detailTime.textContent = fmtHM(o.createdTs);
+                }
+
+                // 商品一覧（3列レイアウト）
                 const items = document.createElement("div");
+                items.className = "items";
                 o.items.forEach((it) => {
                     const r = document.createElement("div");
-                    r.textContent = `${it.itemName} ×${it.quantity} … ${yen(it.totalPrice)}`;
+                    r.className = "item-row";
+                    const n = document.createElement("div");
+                    n.className = "iname";
+                    n.textContent = it.itemName;
+                    const q = document.createElement("div");
+                    q.className = "qty";
+                    q.textContent = `×${it.quantity}`;
+                    const p = document.createElement("div");
+                    p.className = "price";
+                    p.textContent = yen(it.totalPrice);
+                    r.append(n, q, p);
                     items.append(r);
                 });
+
                 detailBody.innerHTML = "";
                 detailBody.append(items);
                 if (o.note) {
                     const n = document.createElement("div");
+                    n.className = "note";
                     n.textContent = `備考: ${o.note}`;
                     detailBody.append(n);
                 }
+
                 detailSummary.textContent = `${o.totalQuantity}点 / 合計 ${yen(o.totalAmount)}`;
 
                 doneBtn.disabled = o.status === "READY";
