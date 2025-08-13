@@ -18,8 +18,8 @@
                 --warning: #f59e0b;
                 --danger: #ef4444;
                 --pad: 16px;
-                --vh: 100vh; /* 実ビューポート高さ（JSで更新） */
-                --header-h: 52px; /* 左ヘッダ高を同期（JSで設定） */
+                --vh: 100vh;
+                --header-h: 52px;
                 --ring: 0 0 0 3px rgba(37, 99, 235, 0.25);
             }
             * {
@@ -50,7 +50,6 @@
                     "cv01" 1;
             }
 
-            /* 全体レイアウト：左をやや狭く、右をやや広く */
             .wrap {
                 height: calc(var(--vh) - (var(--pad) * 2));
                 max-width: 1280px;
@@ -110,25 +109,38 @@
                 min-height: 0;
             }
 
-            /* 一覧の各行：行高を少し高め、選択色を追加 */
             .row {
                 display: grid;
                 grid-template-columns: 44px 64px 1fr 140px 18px;
                 align-items: center;
                 gap: 6px;
-                padding: 12px 12px; /* 縦の余白を+ */
+                padding: 12px 12px;
                 border-bottom: 1px solid var(--border);
                 cursor: pointer;
                 background: #fff;
-                transition: background-color 0.12s ease;
+                transition:
+                    background-color 0.12s ease,
+                    color 0.12s ease;
             }
             .row:hover {
                 background: #f8fafc;
             }
             .row.is-selected {
-                background: #eef2ff; /* 選択中のハイライト */
+                background: #eef2ff;
                 box-shadow: inset 3px 0 0 0 var(--accent);
             }
+            /* 提供済みの薄灰色表示 */
+            .row.is-ready {
+                background: #f8fafc;
+                color: #6b7280;
+            }
+            .row.is-ready .c-number {
+                color: #9ca3af;
+            }
+            .row.is-ready .dot.ready {
+                background: #9ca3af;
+            }
+
             .row.is-new {
                 animation: flashNew 1.6s ease-out 1;
             }
@@ -140,6 +152,7 @@
                     background: #fff;
                 }
             }
+
             .c-number {
                 font-weight: 800;
                 color: var(--accent);
@@ -225,14 +238,14 @@
                 height: var(--header-h);
                 min-height: var(--header-h);
                 max-height: var(--header-h);
-                overflow: hidden; /* 左ヘッダと高さを厳密一致させる */
+                overflow: hidden;
             }
             .top-left {
                 display: flex;
                 align-items: center;
                 gap: 12px;
                 min-width: 0;
-                white-space: nowrap; /* 折返し防止 */
+                white-space: nowrap;
             }
             .order-number {
                 color: var(--accent);
@@ -347,7 +360,7 @@
                 color: #fff;
                 border-radius: 999px;
                 padding: 0 18px;
-                min-height: 48px; /* 全体レイアウトに合わせてやや大きめ */
+                min-height: 48px;
                 font-size: 1rem;
                 cursor: pointer;
                 white-space: nowrap;
@@ -360,6 +373,9 @@
                 opacity: 0.6;
                 cursor: not-allowed;
                 box-shadow: none;
+            }
+            .primary .spinner {
+                margin-right: 6px;
             }
 
             /* スケルトン */
@@ -396,7 +412,22 @@
                 }
             }
 
-            /* 中幅での微調整 */
+            /* スピナー（orderと同様） */
+            .spinner {
+                width: 16px;
+                height: 16px;
+                border: 2px solid rgba(255, 255, 255, 0.7);
+                border-right-color: transparent;
+                border-radius: 50%;
+                display: inline-block;
+                animation: spin 0.8s linear infinite;
+            }
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
             @media (max-width: 1024px) {
                 .wrap {
                     grid-template-columns: clamp(330px, 40vw, 460px) minmax(
@@ -408,7 +439,6 @@
         </style>
 
         <script>
-            /* iOS/Safari 対策：実ビューポート高さをCSS変数 --vh に反映 */
             (function setRealVH() {
                 const apply = () => {
                     const vh =
@@ -459,7 +489,6 @@
                         ></span>
                     </div>
                     <div class="top-right">
-                        <!-- READY のときだけ表示する「受付 hh:mm」ピル（初期は非表示） -->
                         <span
                             class="pill"
                             id="pillAccept"
@@ -469,7 +498,6 @@
                             <span class="label">受付</span>
                             <span id="acceptTime"></span>
                         </span>
-                        <!-- 右側のピル（PENDING: 経過 mm:ss, READY: 提供 hh:mm） -->
                         <span class="pill" id="pillTime" style="display: none">
                             <span class="label" id="timeLabel">経過</span>
                             <span id="detailTime"></span>
@@ -488,7 +516,7 @@
 
         <script>
             const API_BASE =
-                "https://script.google.com/macros/s/AKfycbx13V768FI1C79iewAv8q5j5dp-EB1gOzh0UurwnGnEoEiud8cpzSBmAeALs8HW8R893w/exec"; // ←あなたの/execに置換
+                "https://script.google.com/macros/s/AKfycbx13V768FI1C79iewAv8q5j5dp-EB1gOzh0UurwnGnEoEiud8cpzSBmAeALs8HW8R893w/exec";
             const rowsEl = document.getElementById("rows");
             const refreshBtn = document.getElementById("refreshBtn");
             const listHeader = document.getElementById("listHeader");
@@ -504,7 +532,6 @@
             const detailSummary = document.getElementById("detailSummary");
             const doneBtn = document.getElementById("doneBtn");
 
-            // 「受付」ピル（READYの時だけ左に追加表示）
             const pillAccept = document.getElementById("pillAccept");
             const acceptTime = document.getElementById("acceptTime");
 
@@ -523,31 +550,27 @@
                 );
             };
 
-            // 左ヘッダーと右トップバーの高さを同期（常に一致させる）
             function syncHeaderHeight() {
                 try {
                     const h =
                         listHeader.getBoundingClientRect().height ||
                         listHeader.offsetHeight ||
                         0;
-                    if (h > 0) {
+                    if (h > 0)
                         document.documentElement.style.setProperty(
                             "--header-h",
                             Math.round(h) + "px",
                         );
-                    }
                 } catch (e) {}
             }
-            // 初期＋リサイズ＋フォント/ビューポート変化で同期
             window.addEventListener("load", syncHeaderHeight);
             window.addEventListener("resize", syncHeaderHeight);
-            if (window.visualViewport) {
+            if (window.visualViewport)
                 window.visualViewport.addEventListener(
                     "resize",
                     syncHeaderHeight,
                     { passive: true },
                 );
-            }
 
             const state = {
                 pending: [],
@@ -556,7 +579,10 @@
                 prevIdSet: new Set(),
             };
 
-            // 経過時間タイマー
+            // 準備完了完了後、次回更新で最上段を選択するフラグ
+            let nextSelectTop = false;
+
+            // 経過時間ピル
             let elapsedTimer = null;
 
             // フェッチ競合防止
@@ -568,50 +594,14 @@
                 for (let i = 0; i < 6; i++) {
                     const r = document.createElement("div");
                     r.className = "skeleton-row";
-                    const s1 = document.createElement("div");
-                    s1.className = "skeleton";
-                    s1.style.height = "18px";
-                    const s2 = document.createElement("div");
-                    s2.className = "skeleton";
-                    s2.style.height = "18px";
-                    const s3 = document.createElement("div");
-                    s3.className = "skeleton";
-                    s3.style.height = "18px";
-                    const s4 = document.createElement("div");
-                    s4.className = "skeleton";
-                    s4.style.height = "18px";
-                    const s5 = document.createElement("div");
-                    s5.className = "skeleton";
-                    s5.style.height = "10px";
-                    r.append(s1, s2, s3, s4, s5);
+                    for (let j = 0; j < 5; j++) {
+                        const s = document.createElement("div");
+                        s.className = "skeleton";
+                        s.style.height = j === 4 ? "10px" : "18px";
+                        r.append(s);
+                    }
                     rowsEl.append(r);
                 }
-            }
-
-            function buildItemSummary(container, order) {
-                container.innerHTML = "";
-                const itemsWrap = document.createElement("div");
-                itemsWrap.className = "items";
-                (order.items || []).forEach((it) => {
-                    const row = document.createElement("div");
-                    row.className = "item-row";
-                    const n = document.createElement("div");
-                    n.className = "iname";
-                    n.textContent = it.itemName;
-                    const q = document.createElement("div");
-                    q.className = "qty";
-                    q.textContent = `×${it.quantity}`;
-                    const p = document.createElement("div");
-                    p.className = "price";
-                    p.textContent = yen(it.totalPrice);
-                    row.append(n, q, p);
-                    itemsWrap.append(row);
-                });
-                const sum = document.createElement("div");
-                sum.style.textAlign = "right";
-                sum.style.fontWeight = "800";
-                sum.textContent = `${order.totalQuantity}点 / 合計 ${yen(order.totalAmount)}`;
-                container.append(itemsWrap, sum);
             }
 
             function makeOrUpdateRow(li, o) {
@@ -682,20 +672,22 @@
                     "dot " + (o.status === "READY" ? "ready" : "pending");
                 c5.append(dot);
 
-                if (state.selectedId === o.groupId) {
-                    li.classList.add("is-selected");
-                } else {
-                    li.classList.remove("is-selected");
-                }
+                // 状態クラス
+                if (o.status === "READY") li.classList.add("is-ready");
+                else li.classList.remove("is-ready");
 
-                // クリック時は差分レンダリングせず、ハイライトだけ更新してスクロール維持
+                // 選択ハイライト
+                if (state.selectedId === o.groupId)
+                    li.classList.add("is-selected");
+                else li.classList.remove("is-selected");
+
+                // クリックでハイライトのみ更新（スクロール維持）
                 li.onclick = () => {
                     if (state.selectedId === o.groupId) return;
                     state.selectedId = o.groupId;
                     const prevSel = rowsEl.querySelector(".row.is-selected");
-                    if (prevSel && prevSel !== li) {
+                    if (prevSel && prevSel !== li)
                         prevSel.classList.remove("is-selected");
-                    }
                     li.classList.add("is-selected");
                     renderDetail();
                 };
@@ -706,7 +698,6 @@
             function renderList() {
                 const merged = [...state.pending, ...state.ready];
 
-                // 差分レンダリング：既存ノード再利用
                 const existing = new Map();
                 Array.from(rowsEl.children).forEach((el) => {
                     if (el.dataset && el.dataset.id)
@@ -714,12 +705,9 @@
                 });
 
                 const fragment = document.createDocumentFragment();
-
-                // 新規ID検知用
                 const newIdSet = new Set();
                 const nextIdSet = new Set();
 
-                // スクロール位置の維持
                 const prevScrollTop = rowsEl.scrollTop;
 
                 merged.forEach((o) => {
@@ -736,7 +724,6 @@
 
                 rowsEl.replaceChildren(fragment);
 
-                // 新着ハイライト付与
                 newIdSet.forEach((id) => {
                     if (!state.prevIdSet.has(id)) {
                         const el = rowsEl.querySelector(`li[data-id="${id}"]`);
@@ -751,7 +738,6 @@
                 });
                 state.prevIdSet = nextIdSet;
 
-                // スクロール位置復元
                 rowsEl.scrollTop = prevScrollTop;
 
                 if (merged.length === 0) {
@@ -782,7 +768,6 @@
                     return;
                 }
                 if (o.status === "READY") {
-                    // 右ピルは「提供 hh:mm」
                     pillTime.style.display = "inline-flex";
                     timeLabel.textContent = "提供";
                     detailTime.textContent = fmtHM(
@@ -790,7 +775,6 @@
                     );
                     pillTime.classList.remove("pill--warn", "pill--danger");
                 } else {
-                    // 右ピルは「経過 mm:ss」
                     pillTime.style.display = "inline-flex";
                     timeLabel.textContent = "経過";
                     const now = Date.now();
@@ -802,13 +786,9 @@
                         String(mm).padStart(2, "0") +
                         ":" +
                         String(ss).padStart(2, "0");
-                    // 閾値で色替え（5分, 10分）
                     pillTime.classList.remove("pill--warn", "pill--danger");
-                    if (mm >= 10) {
-                        pillTime.classList.add("pill--danger");
-                    } else if (mm >= 5) {
-                        pillTime.classList.add("pill--warn");
-                    }
+                    if (mm >= 10) pillTime.classList.add("pill--danger");
+                    else if (mm >= 5) pillTime.classList.add("pill--warn");
                 }
             }
 
@@ -841,20 +821,15 @@
                     doneBtn.disabled = true;
                     doneBtn.textContent = "準備完了";
                     doneBtn.onclick = null;
-
                     if (elapsedTimer) {
                         clearInterval(elapsedTimer);
                         elapsedTimer = null;
                     }
-
-                    // 高さ同期（空でも左ヘッダと同じ高さを維持）
                     syncHeaderHeight();
                     return;
                 }
 
-                // 選択あり：上部UIを表示
                 detailStatus.style.display = "inline-flex";
-
                 orderNumber.textContent = o.orderNumber
                     ? `注文 #${String(o.orderNumber).padStart(3, "0")}`
                     : "";
@@ -872,7 +847,6 @@
                     showAcceptPill(false);
                 }
 
-                // 経過/提供ピル
                 startElapsedTimer(o);
 
                 const items = document.createElement("div");
@@ -904,37 +878,39 @@
 
                 detailSummary.textContent = `${o.totalQuantity}点 / 合計 ${yen(o.totalAmount)}`;
 
-                // 「準備完了」：即時処理（確認シートなし）
                 doneBtn.disabled = o.status === "READY";
                 doneBtn.textContent =
                     o.status === "READY" ? "提供済み" : "準備完了";
                 doneBtn.onclick = () => {
                     if (o.status === "READY") return;
                     doneBtn.disabled = true;
-                    const prevText = doneBtn.textContent;
-                    doneBtn.textContent = "処理中…";
+                    const prevHTML = doneBtn.innerHTML;
+                    doneBtn.innerHTML =
+                        '<span class="spinner" aria-hidden="true"></span>処理中…';
                     fetch(`${API_BASE}?action=ready`, {
                         method: "POST",
                         headers: { "Content-Type": "text/plain;charset=UTF-8" },
                         body: JSON.stringify({ groupId: o.groupId }),
                     })
                         .then((r) => r.json())
-                        .then((_) => fetchOrders())
+                        .then((_) => {
+                            // 次回更新で最上段を選択
+                            nextSelectTop = true;
+                            return fetchOrders();
+                        })
                         .catch((err) => {
                             alert(
                                 "更新に失敗しました: " +
                                     ((err && err.message) || String(err)),
                             );
                             doneBtn.disabled = false;
-                            doneBtn.textContent = prevText || "準備完了";
+                            doneBtn.innerHTML = prevHTML || "準備完了";
                         });
                 };
 
-                // 表示更新後にも高さ同期
                 syncHeaderHeight();
             }
 
-            // 最終更新の表示
             function setLastUpdated(serverTime) {
                 if (!serverTime) {
                     lastUpdatedEl.textContent = "最終更新 --:--:--";
@@ -954,16 +930,13 @@
             function fetchOrders() {
                 const mySeq = ++fetchSeq;
                 latestRequested = mySeq;
-
                 refreshBtn.disabled = true;
 
                 return fetch(`${API_BASE}?action=kitchen&limitCompleted=200`)
                     .then((r) => r.json())
                     .then((res) => {
-                        // 最新のレスポンスのみ採用
-                        if (mySeq !== latestRequested) {
-                            return;
-                        }
+                        if (mySeq !== latestRequested) return;
+
                         const prevSelected = state.selectedId;
 
                         state.pending = res.pending || [];
@@ -971,11 +944,14 @@
 
                         const merged = [...state.pending, ...state.ready];
 
-                        // 選択の維持/初期選択
                         if (merged.length === 0) {
                             state.selectedId = null;
                         } else {
-                            if (
+                            if (nextSelectTop) {
+                                // 準備完了直後は最上段を選択
+                                state.selectedId = merged[0].groupId;
+                                nextSelectTop = false;
+                            } else if (
                                 !state.selectedId ||
                                 !merged.find(
                                     (x) => x.groupId === state.selectedId,
@@ -985,12 +961,10 @@
                             }
                         }
 
-                        // レンダリング
                         renderList();
                         renderDetail();
                         setLastUpdated(res.serverTime);
 
-                        // 新たに選択された要素がある場合は見える範囲に
                         if (
                             state.selectedId &&
                             state.selectedId !== prevSelected
@@ -998,11 +972,7 @@
                             const el = rowsEl.querySelector(
                                 `li[data-id="${state.selectedId}"]`,
                             );
-                            if (el) {
-                                el.scrollIntoView({
-                                    block: "nearest",
-                                });
-                            }
+                            if (el) el.scrollIntoView({ block: "nearest" });
                         }
                     })
                     .catch((err) => {
@@ -1010,15 +980,13 @@
                         alert("注文の取得に失敗しました。");
                     })
                     .finally(() => {
-                        if (mySeq === latestRequested) {
+                        if (mySeq === latestRequested)
                             refreshBtn.disabled = false;
-                        }
                     });
             }
 
             refreshBtn.onclick = () => fetchOrders();
 
-            // 初回スケルトン→取得
             createSkeleton();
             fetchOrders();
             setInterval(fetchOrders, 8000);
