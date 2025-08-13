@@ -16,9 +16,12 @@
                 --accent: #2563eb;
                 --success: #10b981;
                 --warning: #f59e0b;
+                --danger: #ef4444;
                 --pad: 16px;
                 --vh: 100vh; /* 実ビューポート高さ（JSで更新） */
                 --header-h: 52px; /* 左ヘッダ高を同期（JSで設定） */
+                --ring: 0 0 0 3px rgba(37, 99, 235, 0.25);
+                --sheet-radius: 16px;
             }
             * {
                 box-sizing: border-box;
@@ -76,14 +79,29 @@
                 padding: 12px 14px;
                 border-bottom: 1px solid var(--border);
             }
+            .left-controls {
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .last-updated {
+                color: var(--muted);
+                font-size: 0.9rem;
+                white-space: nowrap;
+            }
             .btn {
                 appearance: none;
                 border: 1px solid var(--border);
                 background: #fff;
                 color: var(--text);
-                padding: 6px 10px;
+                padding: 8px 12px;
                 border-radius: 999px;
                 cursor: pointer;
+                min-height: 36px;
+            }
+            .btn:focus-visible {
+                outline: none;
+                box-shadow: var(--ring);
             }
             .rows {
                 list-style: none;
@@ -111,6 +129,17 @@
             .row.is-selected {
                 background: #eef2ff; /* 選択中のハイライト */
                 box-shadow: inset 3px 0 0 0 var(--accent);
+            }
+            .row.is-new {
+                animation: flashNew 1.6s ease-out 1;
+            }
+            @keyframes flashNew {
+                0% {
+                    background: #ecfeff;
+                }
+                100% {
+                    background: #fff;
+                }
             }
             .c-number {
                 font-weight: 800;
@@ -252,6 +281,16 @@
             .pill .label {
                 color: var(--muted);
             }
+            .pill--warn {
+                background: #fffbeb;
+                color: #92400e;
+                border-color: #fde68a;
+            }
+            .pill--danger {
+                background: #fef2f2;
+                color: #991b1b;
+                border-color: #fecaca;
+            }
 
             .detail {
                 padding: 12px 14px;
@@ -303,16 +342,164 @@
                 font-weight: 800;
             }
             .primary {
+                appearance: none;
+                border: none;
                 background: var(--accent);
                 color: #fff;
-                border: none;
                 border-radius: 999px;
-                padding: 8px 16px;
+                padding: 0 18px;
+                min-height: 48px; /* 少し大きく */
+                font-size: 1rem;
                 cursor: pointer;
+                white-space: nowrap;
+                box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
             }
             .primary:disabled {
                 opacity: 0.6;
                 cursor: not-allowed;
+                box-shadow: none;
+            }
+
+            /* スケルトン */
+            .skeleton-row {
+                display: grid;
+                grid-template-columns: 44px 64px 1fr 140px 18px;
+                gap: 6px;
+                padding: 12px;
+                border-bottom: 1px solid var(--border);
+            }
+            .skeleton {
+                position: relative;
+                overflow: hidden;
+                background: #e5e7eb;
+                border-radius: 6px;
+                min-height: 14px;
+            }
+            .skeleton::after {
+                content: "";
+                position: absolute;
+                inset: 0;
+                transform: translateX(-100%);
+                background: linear-gradient(
+                    90deg,
+                    rgba(255, 255, 255, 0) 0%,
+                    rgba(255, 255, 255, 0.6) 50%,
+                    rgba(255, 255, 255, 0) 100%
+                );
+                animation: shimmer 1.2s infinite;
+            }
+            @keyframes shimmer {
+                100% {
+                    transform: translateX(100%);
+                }
+            }
+
+            /* シート（orderから流用） */
+            .sheet {
+                position: fixed;
+                inset: 0;
+                z-index: 100;
+                pointer-events: none;
+            }
+            .sheet[hidden] {
+                display: none;
+            }
+            .sheet__backdrop {
+                position: absolute;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.35);
+                opacity: 0;
+                transition: opacity 160ms ease;
+            }
+            .sheet__panel {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                transform: translateY(100%);
+                background: var(--card);
+                border-top-left-radius: var(--sheet-radius);
+                border-top-right-radius: var(--sheet-radius);
+                border: 1px solid var(--border);
+                border-bottom: none;
+                box-shadow: 0 -16px 48px rgba(0, 0, 0, 0.18);
+                transition: transform 200ms ease;
+                display: grid;
+                grid-template-rows: auto 1fr auto;
+                gap: 0;
+                pointer-events: auto;
+                max-height: 85vh;
+            }
+            .sheet--open .sheet__backdrop {
+                opacity: 1;
+            }
+            .sheet--open .sheet__panel {
+                transform: translateY(0%);
+            }
+            .sheet__header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                padding: 10px 12px;
+                border-bottom: 1px solid var(--border);
+                min-height: 64px;
+            }
+            .sheet__title {
+                font-weight: 800;
+            }
+            .sheet__actions {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .sheet__content {
+                overflow: auto;
+                padding: 12px 14px;
+                display: grid;
+                gap: 10px;
+            }
+            .sheet__footer {
+                padding: 10px 12px;
+                border-top: 1px solid var(--border);
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 8px;
+                padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            }
+            .btn--ghost {
+                appearance: none;
+                border: 1px solid var(--border);
+                background: #fff;
+                color: var(--text);
+                padding: 0 14px;
+                min-height: 44px;
+                border-radius: 999px;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1rem;
+            }
+
+            /* スピナー（orderと同様） */
+            .spinner {
+                width: 16px;
+                height: 16px;
+                border: 2px solid rgba(255, 255, 255, 0.7);
+                border-right-color: transparent;
+                border-radius: 50%;
+                display: inline-block;
+                animation: spin 0.8s linear infinite;
+            }
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
             }
 
             /* 中幅での微調整 */
@@ -355,7 +542,12 @@
         <div class="wrap">
             <section class="panel">
                 <header id="listHeader">
-                    <div>注文一覧</div>
+                    <div class="left-controls">
+                        <div>注文一覧</div>
+                        <div id="lastUpdated" class="last-updated">
+                            最終更新 --:--:--
+                        </div>
+                    </div>
                     <button id="refreshBtn" class="btn">更新</button>
                 </header>
                 <ul id="rows" class="rows"></ul>
@@ -383,9 +575,9 @@
                             <span class="label">受付</span>
                             <span id="acceptTime"></span>
                         </span>
-                        <!-- 右側のピルは PENDING:「受付」、READY:「提供」（初期は非表示） -->
+                        <!-- 右側のピル（PENDING: 経過 mm:ss, READY: 提供 hh:mm） -->
                         <span class="pill" id="pillTime" style="display: none">
-                            <span class="label" id="timeLabel">受付</span>
+                            <span class="label" id="timeLabel">経過</span>
                             <span id="detailTime"></span>
                         </span>
                     </div>
@@ -400,12 +592,47 @@
             </section>
         </div>
 
+        <!-- 準備完了 確認シート -->
+        <div
+            id="confirmSheet"
+            class="sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirmTitle"
+            aria-hidden="true"
+            hidden
+        >
+            <div class="sheet__backdrop" id="confirmBackdrop"></div>
+            <div class="sheet__panel" role="document">
+                <div class="sheet__header">
+                    <div class="sheet__title" id="confirmTitle">提供確認</div>
+                    <div class="sheet__actions">
+                        <button id="confirmOk" class="primary" type="button">
+                            提供済みにする
+                        </button>
+                    </div>
+                </div>
+                <div class="sheet__content">
+                    <div class="seat-note" id="confirmSeat"></div>
+                    <div class="p-body" style="margin-top: 6px">
+                        <div id="confirmList" class="brief-list"></div>
+                    </div>
+                </div>
+                <div class="sheet__footer">
+                    <button id="confirmBack" class="btn--ghost" type="button">
+                        戻る
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <script>
             const API_BASE =
                 "https://script.google.com/macros/s/AKfycbx13V768FI1C79iewAv8q5j5dp-EB1gOzh0UurwnGnEoEiud8cpzSBmAeALs8HW8R893w/exec"; // ←あなたの/execに置換
             const rowsEl = document.getElementById("rows");
             const refreshBtn = document.getElementById("refreshBtn");
             const listHeader = document.getElementById("listHeader");
+            const lastUpdatedEl = document.getElementById("lastUpdated");
 
             const orderNumber = document.getElementById("orderNumber");
             const detailSeat = document.getElementById("detailSeat");
@@ -420,6 +647,14 @@
             // 「受付」ピル（READYの時だけ左に追加表示）
             const pillAccept = document.getElementById("pillAccept");
             const acceptTime = document.getElementById("acceptTime");
+
+            // 確認シート
+            const confirmSheet = document.getElementById("confirmSheet");
+            const confirmBackdrop = document.getElementById("confirmBackdrop");
+            const confirmBack = document.getElementById("confirmBack");
+            const confirmOk = document.getElementById("confirmOk");
+            const confirmSeat = document.getElementById("confirmSeat");
+            const confirmList = document.getElementById("confirmList");
 
             const yen = (n) => "¥" + Number(n || 0).toLocaleString("ja-JP");
             const fmtHM = (v) => {
@@ -462,27 +697,112 @@
                 );
             }
 
-            const state = { pending: [], ready: [], selectedId: null };
+            // setLoading（orderから流用）
+            function setLoading(btn, loading, labelWhenIdle) {
+                if (loading) {
+                    btn.disabled = true;
+                    btn.innerHTML =
+                        '<span class="spinner" aria-hidden="true"></span>処理中…';
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = labelWhenIdle || "OK";
+                }
+            }
 
-            function makeRow(o) {
-                const li = document.createElement("li");
+            const state = {
+                pending: [],
+                ready: [],
+                selectedId: null,
+                prevIdSet: new Set(),
+            };
+
+            // 経過時間タイマー
+            let elapsedTimer = null;
+
+            // フェッチ競合防止
+            let fetchSeq = 0;
+            let latestRequested = 0;
+
+            function createSkeleton() {
+                rowsEl.innerHTML = "";
+                for (let i = 0; i < 6; i++) {
+                    const r = document.createElement("div");
+                    r.className = "skeleton-row";
+                    const s1 = document.createElement("div");
+                    s1.className = "skeleton";
+                    s1.style.height = "18px";
+                    const s2 = document.createElement("div");
+                    s2.className = "skeleton";
+                    s2.style.height = "18px";
+                    const s3 = document.createElement("div");
+                    s3.className = "skeleton";
+                    s3.style.height = "18px";
+                    const s4 = document.createElement("div");
+                    s4.className = "skeleton";
+                    s4.style.height = "18px";
+                    const s5 = document.createElement("div");
+                    s5.className = "skeleton";
+                    s5.style.height = "10px";
+                    r.append(s1, s2, s3, s4, s5);
+                    rowsEl.append(r);
+                }
+            }
+
+            function buildItemSummary(container, order) {
+                container.innerHTML = "";
+                const itemsWrap = document.createElement("div");
+                itemsWrap.className = "items";
+                (order.items || []).forEach((it) => {
+                    const row = document.createElement("div");
+                    row.className = "item-row";
+                    const n = document.createElement("div");
+                    n.className = "iname";
+                    n.textContent = it.itemName;
+                    const q = document.createElement("div");
+                    q.className = "qty";
+                    q.textContent = `×${it.quantity}`;
+                    const p = document.createElement("div");
+                    p.className = "price";
+                    p.textContent = yen(it.totalPrice);
+                    row.append(n, q, p);
+                    itemsWrap.append(row);
+                });
+                const sum = document.createElement("div");
+                sum.style.textAlign = "right";
+                sum.style.fontWeight = "800";
+                sum.textContent = `${order.totalQuantity}点 / 合計 ${yen(order.totalAmount)}`;
+                container.append(itemsWrap, sum);
+            }
+
+            function makeOrUpdateRow(li, o) {
                 li.className = "row";
                 li.dataset.id = o.groupId;
 
-                const c1 = document.createElement("div");
+                let c1 = li.children[0];
+                if (!c1) {
+                    c1 = document.createElement("div");
+                    li.append(c1);
+                }
                 c1.className = "c-number";
                 c1.textContent = o.orderNumber
                     ? `#${String(o.orderNumber).padStart(3, "0")}`
                     : "--";
 
-                const c2 = document.createElement("div");
+                let c2 = li.children[1];
+                if (!c2) {
+                    c2 = document.createElement("div");
+                    li.append(c2);
+                }
                 c2.className = "c-time";
-                // 一覧の時刻は「受付（createdTs）」に統一
-                const t = o.createdTs;
-                c2.textContent = fmtHM(t);
+                c2.textContent = fmtHM(o.createdTs);
 
-                const c3 = document.createElement("div");
+                let c3 = li.children[2];
+                if (!c3) {
+                    c3 = document.createElement("div");
+                    li.append(c3);
+                }
                 c3.className = "c-seat";
+                c3.innerHTML = "";
                 if (o.seat) {
                     const sLabel = document.createElement("span");
                     sLabel.className = "s-label";
@@ -495,8 +815,13 @@
                     c3.textContent = "テイクアウト";
                 }
 
-                const c4 = document.createElement("div");
+                let c4 = li.children[3];
+                if (!c4) {
+                    c4 = document.createElement("div");
+                    li.append(c4);
+                }
                 c4.className = "c-sum";
+                c4.innerHTML = "";
                 const q = document.createElement("span");
                 q.className = "qty";
                 q.textContent = `${o.totalQuantity}点`;
@@ -505,39 +830,92 @@
                 a.textContent = yen(o.totalAmount);
                 c4.append(q, a);
 
-                const c5 = document.createElement("div");
+                let c5 = li.children[4];
+                if (!c5) {
+                    c5 = document.createElement("div");
+                    li.append(c5);
+                }
                 c5.className = "c-dot";
+                c5.innerHTML = "";
                 const dot = document.createElement("span");
                 dot.className =
                     "dot " + (o.status === "READY" ? "ready" : "pending");
                 c5.append(dot);
 
-                li.append(c1, c2, c3, c4, c5);
-
-                // 選択ハイライト
                 if (state.selectedId === o.groupId) {
                     li.classList.add("is-selected");
+                } else {
+                    li.classList.remove("is-selected");
                 }
+
                 li.onclick = () => {
                     state.selectedId = o.groupId;
-                    renderList();
+                    renderList(); // 再ハイライトのみ
                     renderDetail();
                 };
+
                 return li;
             }
 
             function renderList() {
-                rowsEl.innerHTML = "";
                 const merged = [...state.pending, ...state.ready];
-                if (!merged.length) {
+
+                // 差分レンダリング：既存ノード再利用
+                const existing = new Map();
+                Array.from(rowsEl.children).forEach((el) => {
+                    if (el.dataset && el.dataset.id)
+                        existing.set(el.dataset.id, el);
+                });
+
+                const fragment = document.createDocumentFragment();
+
+                // 新規ID検知用
+                const newIdSet = new Set();
+                const nextIdSet = new Set();
+
+                merged.forEach((o) => {
+                    nextIdSet.add(o.groupId);
+                    let li = existing.get(o.groupId);
+                    if (!li) {
+                        li = document.createElement("li");
+                        li.dataset.id = o.groupId;
+                        newIdSet.add(o.groupId);
+                    }
+                    makeOrUpdateRow(li, o);
+                    fragment.append(li);
+                });
+
+                // スクロール位置の維持
+                const prevScrollTop = rowsEl.scrollTop;
+
+                // 置き換え
+                rowsEl.replaceChildren(fragment);
+
+                // 新着ハイライト付与
+                newIdSet.forEach((id) => {
+                    if (!state.prevIdSet.has(id)) {
+                        const el = rowsEl.querySelector(`li[data-id="${id}"]`);
+                        if (el) {
+                            el.classList.add("is-new");
+                            setTimeout(
+                                () => el.classList.remove("is-new"),
+                                1600,
+                            );
+                        }
+                    }
+                });
+                state.prevIdSet = nextIdSet;
+
+                // スクロール位置復元
+                rowsEl.scrollTop = prevScrollTop;
+
+                if (merged.length === 0) {
                     const d = document.createElement("div");
                     d.className = "empty";
                     d.textContent = "現在、注文はありません。";
                     rowsEl.append(d);
-                    syncHeaderHeight();
-                    return;
                 }
-                merged.forEach((o) => rowsEl.append(makeRow(o)));
+
                 syncHeaderHeight();
             }
 
@@ -553,6 +931,51 @@
                 }
             }
 
+            function updateElapsedPill(o) {
+                if (!o) {
+                    pillTime.style.display = "none";
+                    return;
+                }
+                if (o.status === "READY") {
+                    // 右ピルは「提供 hh:mm」
+                    pillTime.style.display = "inline-flex";
+                    timeLabel.textContent = "提供";
+                    detailTime.textContent = fmtHM(
+                        o.readyTs || o.updatedTs || o.createdTs,
+                    );
+                    pillTime.classList.remove("pill--warn", "pill--danger");
+                } else {
+                    // 右ピルは「経過 mm:ss」
+                    pillTime.style.display = "inline-flex";
+                    timeLabel.textContent = "経過";
+                    const now = Date.now();
+                    const ms = Math.max(0, now - (o.createdTs || now));
+                    const totalSec = Math.floor(ms / 1000);
+                    const mm = Math.floor(totalSec / 60);
+                    const ss = totalSec % 60;
+                    detailTime.textContent =
+                        String(mm).padStart(2, "0") +
+                        ":" +
+                        String(ss).padStart(2, "0");
+                    // 閾値で色替え（5分, 10分）
+                    pillTime.classList.remove("pill--warn", "pill--danger");
+                    if (mm >= 10) {
+                        pillTime.classList.add("pill--danger");
+                    } else if (mm >= 5) {
+                        pillTime.classList.add("pill--warn");
+                    }
+                }
+            }
+
+            function startElapsedTimer(currentOrder) {
+                if (elapsedTimer) clearInterval(elapsedTimer);
+                updateElapsedPill(currentOrder);
+                elapsedTimer = setInterval(
+                    () => updateElapsedPill(currentOrder),
+                    1000,
+                );
+            }
+
             function renderDetail() {
                 const merged = [...state.pending, ...state.ready];
                 const hasAny = merged.length > 0;
@@ -566,13 +989,18 @@
                     detailStatus.textContent = "";
                     showAcceptPill(false);
                     pillTime.style.display = "none";
-                    timeLabel.textContent = "受付";
+                    timeLabel.textContent = "経過";
                     detailTime.textContent = "";
                     detailBody.innerHTML = "";
                     detailSummary.textContent = "";
                     doneBtn.disabled = true;
                     doneBtn.textContent = "準備完了";
                     doneBtn.onclick = null;
+
+                    if (elapsedTimer) {
+                        clearInterval(elapsedTimer);
+                        elapsedTimer = null;
+                    }
 
                     // 高さ同期（空でも左ヘッダと同じ高さを維持）
                     syncHeaderHeight();
@@ -581,7 +1009,6 @@
 
                 // 選択あり：上部UIを表示
                 detailStatus.style.display = "inline-flex";
-                pillTime.style.display = "inline-flex";
 
                 orderNumber.textContent = o.orderNumber
                     ? `注文 #${String(o.orderNumber).padStart(3, "0")}`
@@ -593,25 +1020,15 @@
                 if (o.status === "READY") {
                     detailStatus.className = "chip chip--ready";
                     detailStatus.textContent = "提供済み";
-
-                    // 左に「受付」ピルを表示（受付時間）
                     showAcceptPill(true, o.createdTs);
-
-                    // 右のピルは「提供」時間
-                    timeLabel.textContent = "提供";
-                    detailTime.textContent = fmtHM(
-                        o.readyTs || o.updatedTs || o.createdTs,
-                    );
                 } else {
                     detailStatus.className = "chip chip--pending";
                     detailStatus.textContent = "準備待ち";
-
-                    // 注文ピルは非表示、右は「受付」
                     showAcceptPill(false);
-
-                    timeLabel.textContent = "受付";
-                    detailTime.textContent = fmtHM(o.createdTs);
                 }
+
+                // 経過/提供ピル
+                startElapsedTimer(o);
 
                 const items = document.createElement("div");
                 items.className = "items";
@@ -642,47 +1059,191 @@
 
                 detailSummary.textContent = `${o.totalQuantity}点 / 合計 ${yen(o.totalAmount)}`;
 
+                // 「準備完了」→ 確認シートを経由
                 doneBtn.disabled = o.status === "READY";
                 doneBtn.textContent =
                     o.status === "READY" ? "提供済み" : "準備完了";
                 doneBtn.onclick = () => {
-                    doneBtn.disabled = true;
-                    doneBtn.textContent = "処理中…";
-                    fetch(`${API_BASE}?action=ready`, {
-                        method: "POST",
-                        headers: { "Content-Type": "text/plain;charset=UTF-8" },
-                        body: JSON.stringify({ groupId: o.groupId }),
-                    })
-                        .then((r) => r.json())
-                        .then((_) => fetchOrders())
-                        .catch((err) => {
-                            alert(
-                                "更新に失敗しました: " +
-                                    ((err && err.message) || String(err)),
-                            );
-                            doneBtn.disabled = false;
-                            doneBtn.textContent = "準備完了";
-                        });
+                    if (o.status === "READY") return;
+                    // シート内容構築
+                    confirmSeat.textContent = o.seat
+                        ? `座席 ${o.seat}`
+                        : "テイクアウト";
+                    buildItemSummary(confirmList, o);
+                    confirmOk.disabled = false;
+                    confirmOk.innerHTML = "提供済みにする";
+                    openSheet(confirmSheet, doneBtn, confirmOk);
+
+                    // 確定フロー
+                    const onConfirm = () => {
+                        setLoading(confirmOk, true, "提供済みにする");
+                        fetch(`${API_BASE}?action=ready`, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "text/plain;charset=UTF-8",
+                            },
+                            body: JSON.stringify({ groupId: o.groupId }),
+                        })
+                            .then((r) => r.json())
+                            .then((_) => {
+                                closeSheet(confirmSheet);
+                                return fetchOrders();
+                            })
+                            .catch((err) => {
+                                alert(
+                                    "更新に失敗しました: " +
+                                        ((err && err.message) || String(err)),
+                                );
+                            })
+                            .finally(() => {
+                                setLoading(confirmOk, false, "提供済みにする");
+                            });
+                    };
+                    confirmOk.onclick = onConfirm;
                 };
 
                 // 表示更新後にも高さ同期
                 syncHeaderHeight();
             }
 
+            // orderのopenSheet/closeSheetの簡易版（フォーカス管理付）
+            let activeSheet = null;
+            let activeTrigger = null;
+            let keydownHandler = null;
+            function getFocusableElements(container) {
+                return Array.from(
+                    container.querySelectorAll(
+                        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+                    ),
+                ).filter(
+                    (el) =>
+                        el.offsetParent !== null || el.getClientRects().length,
+                );
+            }
+            function openSheet(sheet, triggerEl, initialFocusEl) {
+                activeSheet = sheet;
+                activeTrigger = triggerEl || null;
+
+                sheet.hidden = false;
+                sheet.setAttribute("aria-hidden", "false");
+                requestAnimationFrame(() => {
+                    sheet.classList.add("sheet--open");
+                    document.body.classList.add("no-scroll");
+
+                    // フォーカス移動
+                    const target =
+                        initialFocusEl ||
+                        getFocusableElements(sheet)[0] ||
+                        sheet.querySelector(".sheet__panel");
+                    if (target && target.focus) {
+                        setTimeout(() => target.focus(), 0);
+                    }
+
+                    // キーハンドラ（Tabトラップ＋Esc）
+                    keydownHandler = (e) => {
+                        if (!activeSheet) return;
+                        if (e.key === "Escape") {
+                            e.preventDefault();
+                            closeSheet(activeSheet);
+                            return;
+                        }
+                        if (e.key === "Tab") {
+                            const focusables =
+                                getFocusableElements(activeSheet);
+                            if (!focusables.length) return;
+                            const first = focusables[0];
+                            const last = focusables[focusables.length - 1];
+                            const current = document.activeElement;
+
+                            if (e.shiftKey) {
+                                if (
+                                    current === first ||
+                                    !activeSheet.contains(current)
+                                ) {
+                                    e.preventDefault();
+                                    last.focus();
+                                }
+                            } else {
+                                if (current === last) {
+                                    e.preventDefault();
+                                    first.focus();
+                                }
+                            }
+                        }
+                    };
+                    document.addEventListener("keydown", keydownHandler);
+                });
+            }
+            function closeSheet(sheet) {
+                if (!sheet) sheet = activeSheet;
+                if (!sheet) return;
+                sheet.classList.remove("sheet--open");
+                sheet.setAttribute("aria-hidden", "true");
+                document.body.classList.remove("no-scroll");
+                setTimeout(() => {
+                    sheet.hidden = true;
+                }, 200);
+
+                if (keydownHandler) {
+                    document.removeEventListener("keydown", keydownHandler);
+                    keydownHandler = null;
+                }
+
+                // フォーカス返却
+                if (activeTrigger && activeTrigger.focus) {
+                    setTimeout(() => activeTrigger.focus(), 0);
+                }
+                activeSheet = null;
+                activeTrigger = null;
+            }
+            confirmBackdrop.addEventListener("click", () =>
+                closeSheet(confirmSheet),
+            );
+            confirmBack.addEventListener("click", () =>
+                closeSheet(confirmSheet),
+            );
+
+            // 最終更新の表示
+            function setLastUpdated(serverTime) {
+                if (!serverTime) {
+                    lastUpdatedEl.textContent = "最終更新 --:--:--";
+                    return;
+                }
+                try {
+                    const d = new Date(serverTime.replace(" ", "T"));
+                    const hh = String(d.getHours()).padStart(2, "0");
+                    const mm = String(d.getMinutes()).padStart(2, "0");
+                    const ss = String(d.getSeconds()).padStart(2, "0");
+                    lastUpdatedEl.textContent = `最終更新 ${hh}:${mm}:${ss}`;
+                } catch (e) {
+                    lastUpdatedEl.textContent = `最終更新 ${serverTime}`;
+                }
+            }
+
             function fetchOrders() {
+                const mySeq = ++fetchSeq;
+                latestRequested = mySeq;
+
                 refreshBtn.disabled = true;
+
                 return fetch(`${API_BASE}?action=kitchen&limitCompleted=200`)
                     .then((r) => r.json())
                     .then((res) => {
+                        // 最新のレスポンスのみ採用
+                        if (mySeq !== latestRequested) {
+                            return;
+                        }
+                        const prevSelected = state.selectedId;
+
                         state.pending = res.pending || [];
                         state.ready = res.completed || [];
+
                         const merged = [...state.pending, ...state.ready];
 
+                        // 選択の維持/初期選択
                         if (merged.length === 0) {
-                            // 注文が1件もない場合は選択をクリア
                             state.selectedId = null;
                         } else {
-                            // 既存の選択が無ければ先頭を選択
                             if (
                                 !state.selectedId ||
                                 !merged.find(
@@ -693,18 +1254,41 @@
                             }
                         }
 
+                        // レンダリング
                         renderList();
                         renderDetail();
-                        refreshBtn.disabled = false;
+                        setLastUpdated(res.serverTime);
+
+                        // 新たに選択された要素がある場合は見える範囲に
+                        if (
+                            state.selectedId &&
+                            state.selectedId !== prevSelected
+                        ) {
+                            const el = rowsEl.querySelector(
+                                `li[data-id="${state.selectedId}"]`,
+                            );
+                            if (el) {
+                                el.scrollIntoView({
+                                    block: "nearest",
+                                });
+                            }
+                        }
                     })
                     .catch((err) => {
                         console.error(err);
-                        refreshBtn.disabled = false;
                         alert("注文の取得に失敗しました。");
+                    })
+                    .finally(() => {
+                        if (mySeq === latestRequested) {
+                            refreshBtn.disabled = false;
+                        }
                     });
             }
 
             refreshBtn.onclick = () => fetchOrders();
+
+            // 初回スケルトン→取得
+            createSkeleton();
             fetchOrders();
             setInterval(fetchOrders, 8000);
         </script>
