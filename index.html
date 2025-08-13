@@ -589,6 +589,23 @@
             let fetchSeq = 0;
             let latestRequested = 0;
 
+            // 自動更新タイマーとAbort制御
+            let autoTimer = null;
+            let inCriticalRefresh = false;
+            let currentAbort = null;
+
+            function startAutoTimer() {
+                stopAutoTimer();
+                autoTimer = setInterval(() => {
+                    if (inCriticalRefresh) return;
+                    fetchOrders();
+                }, 8000);
+            }
+            function stopAutoTimer() {
+                if (autoTimer) clearInterval(autoTimer);
+                autoTimer = null;
+            }
+
             function createSkeleton() {
                 rowsEl.innerHTML = "";
                 for (let i = 0; i < 6; i++) {
@@ -878,33 +895,48 @@
 
                 detailSummary.textContent = `${o.totalQuantity}点 / 合計 ${yen(o.totalAmount)}`;
 
+                // 準備完了：即時処理＋スピナーをボタン左に表示
                 doneBtn.disabled = o.status === "READY";
                 doneBtn.textContent =
                     o.status === "READY" ? "提供済み" : "準備完了";
                 doneBtn.onclick = () => {
                     if (o.status === "READY") return;
+
+                    // 自動更新停止＋クリティカル更新ON
+                    stopAutoTimer();
+                    inCriticalRefresh = true;
+
                     doneBtn.disabled = true;
-                    const prevHTML = doneBtn.innerHTML;
                     doneBtn.innerHTML =
                         '<span class="spinner" aria-hidden="true"></span>処理中…';
+
+                    // 進行中の一覧取得があれば中断
+                    if (currentAbort) currentAbort.abort();
+
                     fetch(`${API_BASE}?action=ready`, {
                         method: "POST",
                         headers: { "Content-Type": "text/plain;charset=UTF-8" },
                         body: JSON.stringify({ groupId: o.groupId }),
                     })
                         .then((r) => r.json())
-                        .then((_) => {
+                        .then(async (_) => {
                             // 次回更新で最上段を選択
                             nextSelectTop = true;
-                            return fetchOrders();
+                            // 準備完了成功後、即時に手動fetchで左リスト更新
+                            await fetchOrders();
                         })
                         .catch((err) => {
                             alert(
                                 "更新に失敗しました: " +
                                     ((err && err.message) || String(err)),
                             );
+                            // 元に戻す（選択は維持）
                             doneBtn.disabled = false;
-                            doneBtn.innerHTML = prevHTML || "準備完了";
+                            doneBtn.textContent = "準備完了";
+                        })
+                        .finally(() => {
+                            inCriticalRefresh = false;
+                            startAutoTimer();
                         });
                 };
 
@@ -930,9 +962,16 @@
             function fetchOrders() {
                 const mySeq = ++fetchSeq;
                 latestRequested = mySeq;
+
+                // 進行中のfetchを中断
+                if (currentAbort) currentAbort.abort();
+                currentAbort = new AbortController();
+
                 refreshBtn.disabled = true;
 
-                return fetch(`${API_BASE}?action=kitchen&limitCompleted=200`)
+                return fetch(`${API_BASE}?action=kitchen&limitCompleted=200`, {
+                    signal: currentAbort.signal,
+                })
                     .then((r) => r.json())
                     .then((res) => {
                         if (mySeq !== latestRequested) return;
@@ -948,7 +987,6 @@
                             state.selectedId = null;
                         } else {
                             if (nextSelectTop) {
-                                // 準備完了直後は最上段を選択
                                 state.selectedId = merged[0].groupId;
                                 nextSelectTop = false;
                             } else if (
@@ -976,6 +1014,7 @@
                         }
                     })
                     .catch((err) => {
+                        if (err && err.name === "AbortError") return; // 中断は無視
                         console.error(err);
                         alert("注文の取得に失敗しました。");
                     })
@@ -987,9 +1026,9 @@
 
             refreshBtn.onclick = () => fetchOrders();
 
+            // 初期スケルトン→取得→自動更新開始
             createSkeleton();
-            fetchOrders();
-            setInterval(fetchOrders, 8000);
+            fetchOrders().finally(() => startAutoTimer());
         </script>
     </body>
 </html>
