@@ -364,8 +364,13 @@
                         <span id="detailStatus" class="chip"></span>
                     </div>
                     <div class="top-right">
-                        <!-- READY のときだけ表示する「受付 hh:mm」ピル -->
-                        <span class="pill" id="pillAccept" hidden>
+                        <!-- READY のときだけ表示する「受付 hh:mm」ピル（初期は非表示） -->
+                        <span
+                            class="pill"
+                            id="pillAccept"
+                            style="display: none"
+                            aria-hidden="true"
+                        >
                             <span class="label">受付</span>
                             <span id="acceptTime"></span>
                         </span>
@@ -406,6 +411,18 @@
             // 「受付」ピル（READYの時だけ左に追加表示）
             const pillAccept = document.getElementById("pillAccept");
             const acceptTime = document.getElementById("acceptTime");
+
+            const showAcceptPill = (show, ts) => {
+                if (show) {
+                    pillAccept.style.display = "inline-flex";
+                    pillAccept.setAttribute("aria-hidden", "false");
+                    acceptTime.textContent = fmtHM(ts);
+                } else {
+                    pillAccept.style.display = "none";
+                    pillAccept.setAttribute("aria-hidden", "true");
+                    acceptTime.textContent = "";
+                }
+            };
 
             const yen = (n) => "¥" + Number(n || 0).toLocaleString("ja-JP");
             const fmtHM = (v) => {
@@ -502,9 +519,8 @@
                     detailSeat.textContent = "注文を選択";
                     detailStatus.className = "chip";
                     detailStatus.textContent = "";
-                    // 左の「受付」ピルを隠す
-                    pillAccept.hidden = true;
-                    acceptTime.textContent = "";
+                    // 左の「受付」ピルを確実に隠す
+                    showAcceptPill(false);
                     // 右は初期「受付」
                     timeLabel.textContent = "受付";
                     detailTime.textContent = "";
@@ -529,8 +545,7 @@
                     detailStatus.textContent = "提供済み";
 
                     // 左に「受付」ピルを表示（受付時間）
-                    pillAccept.hidden = false;
-                    acceptTime.textContent = fmtHM(o.createdTs);
+                    showAcceptPill(true, o.createdTs);
 
                     // 右のピルは「提供」時間
                     timeLabel.textContent = "提供";
@@ -541,9 +556,8 @@
                     detailStatus.className = "chip chip--pending";
                     detailStatus.textContent = "準備待ち";
 
-                    // 左の「受付」ピルは表示しない
-                    pillAccept.hidden = true;
-                    acceptTime.textContent = "";
+                    // 左の「受付」ピルは表示しない（確実に非表示）
+                    showAcceptPill(false);
 
                     // 右のピルは「受付」時間のみ表示
                     timeLabel.textContent = "受付";
