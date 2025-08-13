@@ -364,6 +364,10 @@
                         <span id="detailStatus" class="chip"></span>
                     </div>
                     <div class="top-right">
+                        <span class="pill" id="pillOrder" hidden>
+                            <span class="label">注文</span>
+                            <span id="orderTime"></span>
+                        </span>
                         <span class="pill" id="pillTime"
                             ><span class="label" id="timeLabel">受付</span
                             ><span id="detailTime"></span
@@ -397,6 +401,10 @@
             const detailSummary = document.getElementById("detailSummary");
             const doneBtn = document.getElementById("doneBtn");
 
+            // 追加: 注文時刻ピル
+            const pillOrder = document.getElementById("pillOrder");
+            const orderTime = document.getElementById("orderTime");
+
             const yen = (n) => "¥" + Number(n || 0).toLocaleString("ja-JP");
             const fmtHM = (v) => {
                 if (!v && v !== 0) return "--:--";
@@ -427,10 +435,8 @@
 
                 const c2 = document.createElement("div");
                 c2.className = "c-time";
-                const t =
-                    o.status === "READY"
-                        ? o.readyTs || o.updatedTs || o.createdTs
-                        : o.createdTs;
+                // 変更: 一覧の時刻は常に「注文時刻」
+                const t = o.createdTs;
                 c2.textContent = fmtHM(t);
 
                 const c3 = document.createElement("div");
@@ -494,6 +500,9 @@
                     detailSeat.textContent = "注文を選択";
                     detailStatus.className = "chip";
                     detailStatus.textContent = "";
+                    // 注文ピルを隠してクリア
+                    pillOrder.hidden = true;
+                    orderTime.textContent = "";
                     timeLabel.textContent = "受付";
                     detailTime.textContent = "";
                     detailBody.textContent =
@@ -515,6 +524,11 @@
                 if (o.status === "READY") {
                     detailStatus.className = "chip chip--ready";
                     detailStatus.textContent = "提供済み";
+
+                    // 2つのピルを表示：「注文」「提供」
+                    pillOrder.hidden = false;
+                    orderTime.textContent = fmtHM(o.createdTs);
+
                     timeLabel.textContent = "提供";
                     detailTime.textContent = fmtHM(
                         o.readyTs || o.updatedTs || o.createdTs,
@@ -522,6 +536,11 @@
                 } else {
                     detailStatus.className = "chip chip--pending";
                     detailStatus.textContent = "準備待ち";
+
+                    // 注文ピルは非表示、右は「受付」
+                    pillOrder.hidden = true;
+                    orderTime.textContent = "";
+
                     timeLabel.textContent = "受付";
                     detailTime.textContent = fmtHM(o.createdTs);
                 }
